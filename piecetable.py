@@ -21,8 +21,11 @@ class Piecetable():
             self.pieces = [Piece(Buffer.ORIGINAL, 0, len(self.original))]
         else:
             self.pieces = []
+        self.history = [self.pieces]
+        self.redoHistory = []
     
     def insert(self, position, text):
+        self.redoHistory = []
         addStart = len(self.add)
         self.add += text
         index, offset = self.findIndex(position)
@@ -35,6 +38,8 @@ class Piecetable():
             split2 = Piece(split.buffer, split.start + offset, split.length - offset)
             addPiece = Piece(Buffer.ADD, addStart, len(text))
             self.pieces[index:index+1] = [split1, addPiece, split2]
+        self.history.append(self.pieces.copy())
+
 
     def findIndex(self, position):
         # find index and offset position within piece if needed
@@ -48,6 +53,7 @@ class Piecetable():
         return (index, 0)
     
     def delete(self, position, length):
+        self.redoHistory = []
         startDelete, startOffset = self.findIndex(position)
         endDelete, endOffset = self.findIndex(position + length)
         startPiece = self.pieces[startDelete]
@@ -63,7 +69,8 @@ class Piecetable():
             new_pieces.append(rightPiece)
         # append to list
         self.pieces[startDelete:endDelete+1] = new_pieces
-    
+        self.history.append(self.pieces.copy())
+
     def getText(self):
         text = []
         for piece in self.pieces:
@@ -72,3 +79,27 @@ class Piecetable():
             else:
                 text.append(self.add[piece.start:(piece.start + piece.length)])
         return "".join(text)
+    
+    def undo(self):
+        if self.history:
+            self.redoHistory.append(self.history.pop())
+            self.pieces = self.history[-1] if self.history else []
+    
+    def redo(self):
+        if self.redoHistory:
+            self.history.append(self.redoHistory.pop())
+            self.pieces = self.history[-1]
+
+    
+if __name__ == "__main__":
+    pt = Piecetable("Hello World")
+    assert pt.getText() == "Hello World"
+    pt.insert(6, "Daniel's ")
+    assert pt.getText() == "Hello Daniel's World"
+    pt.delete(6, 9)
+    assert pt.getText() == "Hello World"
+    pt.undo()
+    assert pt.getText() == "Hello Daniel's World"
+    pt.redo()
+    assert pt.getText() == "Hello World"
+    print("Test 1 passed")
