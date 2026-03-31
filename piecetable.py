@@ -53,6 +53,8 @@ class Piecetable():
         return (index, 0)
     
     def delete(self, position, length):
+        if position == 0:
+            return
         self.redoHistory = []
         startDelete, startOffset = self.findIndex(position)
         endDelete, endOffset = self.findIndex(position + length)
